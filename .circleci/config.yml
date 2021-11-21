@@ -220,17 +220,11 @@ jobs:
           command: |
             apk add --update ansible curl unzip rsync
       - run:
-          name: install aws cli to stop resources
-          command: |
-            curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip"
-            unzip awscliv2.zip
-            sudo ./aws/install
-            aws --version
-      - run:
           name: Configure server
           command: |
             cd .circleci/ansible
             ansible-playbook -i inventory.txt configure-server.yml
+      - revert-migrations
       - destroy-environment
 
 
