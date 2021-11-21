@@ -94,7 +94,7 @@ jobs:
           command: |
             cd backend
             npm i
-            npm run testLoadingMessage.spec.tsx
+            npm run test
 
   scan-frontend:
     docker:
