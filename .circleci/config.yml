@@ -194,10 +194,10 @@ jobs:
 
 
       - persist_to_workspace:
-          root: ~/
+          root: .circleci/ansible/
           paths:
-            - project/.circleci/ansible/inventory.txt
-            - project/.circleci/ansible/IP.txt
+            - inventory.txt
+            - IP.txt
       - revert-migrations
       - destroy-environment
 
@@ -210,7 +210,7 @@ jobs:
       - add_ssh_keys:
           fingerprints: [ "22:d8:7f:d0:24:24:c9:f1:44:72:26:56:82:04:2c:19" ]
       - attach_workspace:
-          at: ~/
+          at: .circleci/ansible/
       - run:
           name: Install dependencies
           command: |
@@ -235,14 +235,28 @@ jobs:
       - image: circleci/node:13.8.0
     steps:
       - checkout
-      - restore_cache:
-          keys: [ backend-build ]
+      - run:
+          name: install deps
+          command: |
+            cd ./backend
+            npm install
       - run:
           name: Run migrations
           command: |
-            cd backend
-            npm install
-            npm run migrations > migrations_dump.txt
+            cd ./backend
+            touch .env
+            echo ENVIROMENT=$ENVIROMENT >> ./.env
+            echo TYPEORM_CONNECTION=$TYPEORM_CONNECTION >> ./.env
+            echo TYPEORM_MIGRATIONS_DIR=$TYPEORM_MIGRATIONS_DIR >> ./.env
+            echo TYPEORM_ENTITIES=$TYPEORM_ENTITIES >> ./.env
+            echo TYPEORM_MIGRATIONS=$TYPEORM_MIGRATIONS >> ./.env
+            echo TYPEORM_HOST=$TYPEORM_HOST >> ./.env
+            echo TYPEORM_PORT=$TYPEORM_PORT >> ./.env
+            echo TYPEORM_USERNAME=$TYPEORM_USERNAME >> ./.env
+            echo TYPEORM_PASSWORD=$TYPEORM_PASSWORD >> ./.env
+            echo TYPEORM_DATABASE=$TYPEORM_DATABASE >> ./.env
+            touch migrations_dump.txt
+            npm run migrations >> migrations_dump.txt
       - run:
           name: Send migration results to memstash
           command: |
@@ -254,8 +268,9 @@ jobs:
               echo "DB migration failed..."
               curl -H "Content-Type: text/plain" -H "token: f4b4bd3c-cff7-4a14-95de-8f7f0e5cdd47" --request PUT --data "0" https://api.memstash.io/values/migration_${CIRCLE_WORKFLOW_ID:0:7}
             fi
+
+      - revert-migrations
       - destroy-environment
-      # Here's where you will add some code to rollback on failure
 
   deploy-frontend:
     docker:
@@ -269,13 +284,13 @@ jobs:
             yum -y install gzip
             curl -sL https://rpm.nodesource.com/setup_lts.x | bash -
             yum -y install nodejs
-      - restore_cache:
-          keys: [ frontend-build ]
+      - attach_workspace:
+          at: .circleci/ansible/
       - run:
           name: Get backend url
           command: |
-            backendIP=`cat ./.circleci/ansible/IP.txt`
-            export API_URL="http://${backendIP}:3030"
+            backend_IP=`cat ./.circleci/ansible/IP.txt`
+            export API_URL="http://${backend_IP}:3030"
             cd ./frontend
             touch ./.env
             echo API_URL=$API_URL >> ./.env
@@ -300,15 +315,32 @@ jobs:
       - add_ssh_keys:
           fingerprints: [ "22:d8:7f:d0:24:24:c9:f1:44:72:26:56:82:04:2c:19" ]
       - attach_workspace:
-          at: ~/
+          at: .circleci/ansible/
       - run:
           name: Install dependencies
           command: |
             apk add --update ansible
+            apk add --update nodejs npm
             apk add --update tar
             apk add --update gzip
             apk add --update curl
             apk add --update openssh-client
+
+      - run:
+          name: Set Enviroment variables
+          command: |
+            cd ./backend
+            touch .env
+            echo ENVIROMENT=$ENVIROMENT >> ./.env
+            echo TYPEORM_CONNECTION=$TYPEORM_CONNECTION >> ./.env
+            echo TYPEORM_MIGRATIONS_DIR=$TYPEORM_MIGRATIONS_DIR >> ./.env
+            echo TYPEORM_ENTITIES=$TYPEORM_ENTITIES >> ./.env
+            echo TYPEORM_MIGRATIONS=$TYPEORM_MIGRATIONS >> ./.env
+            echo TYPEORM_HOST=$TYPEORM_HOST >> ./.env
+            echo TYPEORM_PORT=$TYPEORM_PORT >> ./.env
+            echo TYPEORM_USERNAME=$TYPEORM_USERNAME >> ./.env
+            echo TYPEORM_PASSWORD=$TYPEORM_PASSWORD >> ./.env
+            echo TYPEORM_DATABASE=$TYPEORM_DATABASE >> ./.env
 
       - run:
           name: Deploy backend
@@ -317,15 +349,14 @@ jobs:
             npm i
             npm run build
             cd ..
-            # Zip the directory
             tar -C backend -czvf artifact.tar.gz .
             cd .circleci/ansible
             echo "Contents  of the inventory.txt file is -------"
             cat inventory.txt
             ansible-playbook -i inventory.txt deploy-backend.yml
 
-      - destroy-environment
       - revert-migrations
+      - destroy-environment
 
 
 
