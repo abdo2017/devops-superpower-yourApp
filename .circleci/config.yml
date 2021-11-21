@@ -146,7 +146,6 @@ jobs:
           name: Back-end scan & analyz
           command: |
             cd backend
-#            rm -rf package-lock.json node_modules
             npm i
             npm audit fix --audit-level=critical --force
 
