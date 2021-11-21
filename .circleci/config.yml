@@ -45,7 +45,6 @@ commands:
     steps:
       - run:
           name: Revert migrations
-          # Add when this will run
           command: |
             migrationSuccess=$(curl -H "token: ${CIRCLE_WORKFLOW_ID:0:7}" \
             --request GET https://api.memstash.io/values/migration_status_${CIRCLE_WORKFLOW_ID})
@@ -260,13 +259,15 @@ jobs:
       - run:
           name: Send migration results to memstash
           command: |
-            if grep -q "has been executed successfully." ~/project/backend/migrations_dump.txt
+            if grep -q "has been executed successfully." ./backend/migrationStatus.txt
             then
-              echo "DB migration was successful..."
-              curl -H "Content-Type: text/plain" -H "token: f4b4bd3c-cff7-4a14-95de-8f7f0e5cdd47" --request PUT --data "1" https://api.memstash.io/values/migration_${CIRCLE_WORKFLOW_ID:0:7}
+            curl -H "Content-Type: text/plain" -H "token: ${CIRCLE_WORKFLOW_ID:0:7}" \
+            --request PUT \
+            --data "1" https://api.memstash.io/values/migration_status_${CIRCLE_WORKFLOW_ID}
             else
-              echo "DB migration failed..."
-              curl -H "Content-Type: text/plain" -H "token: f4b4bd3c-cff7-4a14-95de-8f7f0e5cdd47" --request PUT --data "0" https://api.memstash.io/values/migration_${CIRCLE_WORKFLOW_ID:0:7}
+            curl -H "Content-Type: text/plain" -H "token: ${CIRCLE_WORKFLOW_ID:0:7}" \
+            --request PUT \
+            --data "0" https://api.memstash.io/values/migration_status_${CIRCLE_WORKFLOW_ID}
             fi
 
       - revert-migrations
