@@ -46,8 +46,8 @@ commands:
       - run:
           name: Revert migrations
           command: |
-            migrationSuccess=$(curl -H "token: ${CIRCLE_WORKFLOW_ID:0:7}" \
-            --request GET https://api.memstash.io/values/migration_status_${CIRCLE_WORKFLOW_ID})
+            migrationSuccess=$(curl -H "token: 2ceb1b8e-18cb-45ff-9cee-70d4bafd069a" \
+            --request GET https://api.memstash.io/values/migration_status_2ceb1b8e-18cb-45ff-9cee-70d4bafd069a)
             if [[ $migrationSuccess==1 ]]
             then
               cd /home/circleci/project/backend
@@ -259,15 +259,15 @@ jobs:
       - run:
           name: Send migration results to memstash
           command: |
-            if grep -q "has been executed successfully." ./backend/igrations_dump.txt
+            if grep -q "has been executed successfully." ./backend/migrations_dump.txt
             then
-            curl -H "Content-Type: text/plain" -H "token: ${CIRCLE_WORKFLOW_ID:0:7}" \
+            curl -H "Content-Type: text/plain" -H "token: 2ceb1b8e-18cb-45ff-9cee-70d4bafd069a" \
             --request PUT \
-            --data "1" https://api.memstash.io/values/migration_status_${CIRCLE_WORKFLOW_ID}
+            --data "1" https://api.memstash.io/values/migration_status_2ceb1b8e-18cb-45ff-9cee-70d4bafd069a
             else
-            curl -H "Content-Type: text/plain" -H "token: ${CIRCLE_WORKFLOW_ID:0:7}" \
+            curl -H "Content-Type: text/plain" -H "token: 2ceb1b8e-18cb-45ff-9cee-70d4bafd069a" \
             --request PUT \
-            --data "0" https://api.memstash.io/values/migration_status_${CIRCLE_WORKFLOW_ID}
+            --data "0" https://api.memstash.io/values/migration_status_2ceb1b8e-18cb-45ff-9cee-70d4bafd069a
             fi
 
       - revert-migrations
