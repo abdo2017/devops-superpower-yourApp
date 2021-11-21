@@ -197,6 +197,8 @@ jobs:
           root: ~/
           paths:
             - project/.circleci/ansible/inventory.txt
+            - project/.circleci/ansible/IP.txt
+      - revert-migrations
       - destroy-environment
 
 
@@ -272,8 +274,8 @@ jobs:
       - run:
           name: Get backend url
           command: |
-            BACKEND_IP=`cat ./.circleci/ansible/IP.txt`
-            export API_URL="http://${BACKEND_IP}:3030"
+            backendIP=`cat ./.circleci/ansible/IP.txt`
+            export API_URL="http://${backendIP}:3030"
             cd ./frontend
             touch ./.env
             echo API_URL=$API_URL >> ./.env
@@ -286,8 +288,8 @@ jobs:
             npm run build
             tar -czvf artifact-"${CIRCLE_WORKFLOW_ID:0:7}".tar.gz dist
             aws s3 cp dist s3://udapeople-${CIRCLE_WORKFLOW_ID:0:7} --recursive
-      - destroy-environment
       - revert-migrations
+      - destroy-environment
 
 
   deploy-backend:
@@ -307,13 +309,6 @@ jobs:
             apk add --update gzip
             apk add --update curl
             apk add --update openssh-client
-      - run:
-          name: install aws cli to stop resources
-          command: |
-            curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip"
-            unzip awscliv2.zip
-            ./aws/install
-            aws --version
 
       - run:
           name: Deploy backend
