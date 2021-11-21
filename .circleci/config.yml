@@ -266,7 +266,7 @@ jobs:
               echo "DB migration failed..."
               curl -H "Content-Type: text/plain" -H "token: f4b4bd3c-cff7-4a14-95de-8f7f0e5cdd47" --request PUT --data "0" https://api.memstash.io/values/migration_${CIRCLE_WORKFLOW_ID:0:7}
             fi
-      - destroy_environment
+      - destroy-environment
       # Here's where you will add some code to rollback on failure
 
   deploy-frontend:
