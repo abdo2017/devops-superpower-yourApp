@@ -146,7 +146,7 @@ jobs:
           name: Back-end scan & analyz
           command: |
             cd backend
-            rm -rf package-lock.json node_modules
+#            rm -rf package-lock.json node_modules
             npm i
             npm audit fix --audit-level=critical --force
 
@@ -183,15 +183,13 @@ jobs:
             cat ./.circleci/ansible/inventory.txt
 
       - run:
-          name: Add backend IP to a temp file
+          name: Add backend IP to a temp file to use it later
           command: |
             aws ec2 describe-instances \
             --query 'Reservations[*].Instances[*].PublicIpAddress' \
             --filters "Name=tag:project,Values=udapeople-backend" \
             --output text > ./.circleci/ansible/IP.txt
             cat ./.circleci/ansible/IP.txt
-
-
       - persist_to_workspace:
           root: .circleci/ansible/
           paths:
@@ -224,7 +222,7 @@ jobs:
           name: Configure server
           command: |
             cd .circleci/ansible
-            ansible-playbook -i inventory.txt configure-server.yml
+            ANSIBLE_HOST_KEY_CHECKING=False ansible-playbook -i inventory.txt configure-server.yml
       - revert-migrations
       - destroy-environment
 
@@ -259,16 +257,16 @@ jobs:
       - run:
           name: Send migration results to memstash
           command: |
-            if grep -q "has been executed successfully." ./backend/migrations_dump.txt
-            then
-            curl -H "Content-Type: text/plain" -H "token: 2ceb1b8e-18cb-45ff-9cee-70d4bafd069a" \
-            --request PUT \
-            --data "1" https://api.memstash.io/values/migration_status_2ceb1b8e-18cb-45ff-9cee-70d4bafd069a
-            else
-            curl -H "Content-Type: text/plain" -H "token: 2ceb1b8e-18cb-45ff-9cee-70d4bafd069a" \
-            --request PUT \
-            --data "0" https://api.memstash.io/values/migration_status_2ceb1b8e-18cb-45ff-9cee-70d4bafd069a
-            fi
+              if grep -q "has been executed successfully." ./backend/migrationStatus.txt
+              then
+              curl -H "Content-Type: text/plain" -H "token: ${CIRCLE_WORKFLOW_ID:0:7}" \
+              --request PUT \
+              --data "1" https://api.memstash.io/values/migration_status_${CIRCLE_WORKFLOW_ID}
+              else
+              curl -H "Content-Type: text/plain" -H "token: ${CIRCLE_WORKFLOW_ID:0:7}" \
+              --request PUT \
+              --data "0" https://api.memstash.io/values/migration_status_${CIRCLE_WORKFLOW_ID}
+              fi
 
       - revert-migrations
       - destroy-environment
@@ -290,20 +288,21 @@ jobs:
       - run:
           name: Get backend url
           command: |
-            backend_IP=`cat ./.circleci/ansible/IP.txt`
-            export API_URL="http://${backend_IP}:3030"
-            cd ./frontend
-            touch ./.env
-            echo API_URL=$API_URL >> ./.env
-            echo $API_URL
+              backendIP=`cat ./.circleci/ansible/IP.txt`
+              export API_URL="http://${backendIP}:3030"
+              cd ./frontend
+              touch ./.env
+              echo API_URL=$API_URL >> ./.env
+              echo $API_URL
       - run:
           name: Deploy frontend objects
           command: |
-            cd frontend
-            npm install
-            npm run build
-            tar -czvf artifact-"${CIRCLE_WORKFLOW_ID:0:7}".tar.gz dist
-            aws s3 cp dist s3://udapeople-${CIRCLE_WORKFLOW_ID:0:7} --recursive
+              npm install webpack-dev-server -g
+              cd ./frontend
+              npm install
+              npm run build
+              aws s3 cp ./dist s3://udapeople-"${CIRCLE_WORKFLOW_ID:0:7}" --recursive
+
       - revert-migrations
       - destroy-environment
 
@@ -346,16 +345,8 @@ jobs:
       - run:
           name: Deploy backend
           command: |
-            cd backend
-            npm i
-            npm run build
-            cd ..
-            tar -C backend -czvf artifact.tar.gz .
-            cd .circleci/ansible
-            echo "Contents  of the inventory.txt file is -------"
-            cat inventory.txt
-            ansible-playbook -i inventory.txt deploy-backend.yml
-
+            cd ./.circleci/ansible
+            ANSIBLE_HOST_KEY_CHECKING=False ansible-playbook -i inventory.txt deploy-backend.yml
       - revert-migrations
       - destroy-environment
 
@@ -375,25 +366,21 @@ jobs:
       - run:
           name: Backend smoke test.
           command: |
-            BACKEND_IP=`cat ./.circleci/ansible/IP.txt`
-            export API_URL="http://${BACKEND_IP}:3030"
-            echo "${API_URL}"
-            if curl "${API_URL}/api/status" | grep "ok"
-            then
-                return 0
-            else
-                return 1
-            fi
+            backendIP=`cat ./.circleci/ansible/IP.txt`
+            echo $backendIP
+            sleep 20
+            URL="http://$backendIP:3030/api/status"
+            echo $URL
+            curl -s $URL
       - run:
           name: Frontend smoke test.
           command: |
-            URL="http://udapeople-${CIRCLE_WORKFLOW_ID:0:7}.s3-website-us-east-1.amazonaws.com/#/employees"
-            echo ${URL}
+            URL="http://udapeople-${CIRCLE_WORKFLOW_ID}.s3-website-us-east-2.amazonaws.com"
             if curl -s ${URL} | grep "Welcome"
             then
-              return 0
+             return 1
             else
-              return 1
+             return 0
             fi
 
       - revert-migrations
@@ -462,7 +449,7 @@ workflows:
       - deploy-backend:
           requires: [run-migrations]
       - smoke-test:
-          requires: [deploy-backend, deploy-frontend]
+          requires: [deploy-backend, deploy-frontend, run-migrations]
 #      - cloudfront-update:
 #          requires: [smoke-test]
 #      - cleanup:
