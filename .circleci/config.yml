@@ -46,8 +46,8 @@ commands:
       - run:
           name: Revert migrations
           command: |
-            migrationSuccess=$(curl -H "token: 2ceb1b8e-18cb-45ff-9cee-70d4bafd069a" \
-            --request GET https://api.memstash.io/values/migration_status_2ceb1b8e-18cb-45ff-9cee-70d4bafd069a)
+            migrationSuccess=$(curl -H "token: ${CIRCLE_WORKFLOW_ID:0:7}" \
+            --request GET https://api.memstash.io/values/migration_status_${CIRCLE_WORKFLOW_ID})
             if [[ $migrationSuccess==1 ]]
             then
               cd /home/circleci/project/backend
@@ -354,14 +354,14 @@ jobs:
       - image: "python:3.7-alpine3.11"
     steps:
       - checkout
-      - attach_workspace:
-          at: .circleci/ansible/
       - run:
           name: Install dependencies
           command: |
             apk add --update tar
             apk add --update gzip
             apk add --update curl
+      - attach_workspace:
+          at: .circleci/ansible/
       - run:
           name: Backend smoke test.
           command: |
@@ -448,7 +448,7 @@ workflows:
       - deploy-backend:
           requires: [run-migrations]
       - smoke-test:
-          requires: [deploy-backend, deploy-frontend, run-migrations]
+          requires: [deploy-infrastructure, deploy-backend, deploy-frontend, run-migrations]
 #      - cloudfront-update:
 #          requires: [smoke-test]
 #      - cleanup:
