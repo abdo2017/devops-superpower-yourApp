@@ -177,7 +177,7 @@ jobs:
             echo -e "[web]\n" > ./.circleci/ansible/inventory.txt
             aws ec2 describe-instances \
             --query 'Reservations[*].Instances[*].PublicIpAddress' \
-            --filters "Name=tag:project,Values=udapeople-frontend-${CIRCLE_WORKFLOW_ID:0:7}" \
+            --filters "Name=tag:project,Values=udapeople-backend-${CIRCLE_WORKFLOW_ID:0:7}" \
             --output text >> ./.circleci/ansible/inventory.txt
             cat ./.circleci/ansible/inventory.txt
 
@@ -377,22 +377,25 @@ jobs:
       - run:
           name: Backend smoke test.
           command: |
-            backendIP=`cat ./.circleci/ansible/IP.txt`
-            echo $backendIP
-            sleep 20
-            URL="http://$backendIP:3030/api/status"
-            curl -s $URL
+            API_URL=`cat ./.circleci/ansible/IP.txt`
+            echo "${API_URL}"
+            if curl "${API_URL}:3030/api/status" | grep "ok"
+            then
+                return 0
+            else
+                return 1
+            fi
       - run:
           name: Frontend smoke test.
           command: |
 
             URL="http://udapeople-${CIRCLE_WORKFLOW_ID:0:7}.s3-website-us-east-2.amazonaws.com"
              echo ${URL}
-             if curl -s ${URL} | grep "Welcome"
+            if curl -s ${URL} | grep "Welcome"
              then
-               return 1
-             else
                return 0
+             else
+               return 1
              fi
       - revert-migrations
       - destroy-environment
