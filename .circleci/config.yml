@@ -155,6 +155,7 @@ jobs:
     steps:
       - checkout
       - run: yum -y install tar gzip
+      - run: yum  -y install nodejs
       - run:
           name: Ensure back-end infrastructure exists
           command: |
@@ -175,7 +176,6 @@ jobs:
           name: Add back-end ip to ansible inventory
           command: |
             cd ./.circleci/ansible
-            echo -e "[web]\n" > ./inventory.txt
             aws ec2 describe-instances \
               --query 'Reservations[*].Instances[*].PublicIpAddress' \
               --filters "Name=tag:project,Values=udapeople-backend-${CIRCLE_WORKFLOW_ID:0:7}" \
@@ -185,12 +185,12 @@ jobs:
       - run:
           name: add backend ip to a file fo later use
           command: |
-            cd ./circleci/ansible
+            cd .circleci/ansible
             aws ec2 describe-instances \
             --query 'Reservations[*].Instances[*].PublicIpAddress' \
             --filters "Name=tag:project,Values=udapeople-backend-${CIRCLE_WORKFLOW_ID:0:7}" \
-            --output text > ./IP.txt
-            cat ./IP.txt
+            --output text > IP.txt
+            cat IP.txt
 
       - persist_to_workspace:
           root: .circleci/ansible/
@@ -216,14 +216,13 @@ jobs:
             apk add --update ansible
             apk add --update tar
             apk add --update gzip
-      - run:
-          name: install deps
-          command: |
-            apk add --update ansible curl unzip rsync
+            apk add --update unzip
+            apk add --update rsync
+            apk add --update curl
+            apk add --update nodejs npm
       - run:
           name: Configure server
           command: |
-            cd .circleci/ansible
             cat inventory.txt
             ansible-playbook -i inventory.txt configure-server.yml
       - revert-migrations
