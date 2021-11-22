@@ -182,7 +182,7 @@ jobs:
             cat ./.circleci/ansible/inventory.txt
 
       - run:
-          name: add backend ip to memstash to use it for later use
+          name: add backend ip to a file fo later use
           command: |
             aws ec2 describe-instances \
             --query 'Reservations[*].Instances[*].PublicIpAddress' \
@@ -257,7 +257,7 @@ jobs:
       - run:
           name: Send migration results to memstash
           command: |
-              if grep -q "has been executed successfully." ./backend/migrationStatus.txt
+              if grep -q "has been executed successfully." ./backend/migrations_dump.txt
               then
               curl -H "Content-Type: text/plain" -H "token: ${CIRCLE_WORKFLOW_ID:0:7}" \
               --request PUT \
