@@ -1,47 +1,49 @@
 version: 2.1
 
 commands:
-#  destroy-environment:
-#    description: Destroy back-end and front-end cloudformation stacks given a workflow ID.
-#    steps:
-#      - run:
-#          name: Install AWS CLI
-#          when: on_fail
-#          command: |
-#            if ! [ -x "$(command -v aws)" ]; then
-#            pip install awscli
-#            else
-#            echo "AWS CLI already installed"
-#            fi
-#
-#      - run:
-#          name: Remove S3 files
-#          when: on_fail
-#          command: |
-#            aws s3 rm s3://udapeople-${CIRCLE_WORKFLOW_ID:0:7} \
-#            --recursive
-#      - run:
-#          name: Delete S3 bucket
-#          when: on_fail
-#          command: |
-#            aws s3 rb s3://udapeople-${CIRCLE_WORKFLOW_ID:0:7} \
-#            --force
-#      - run:
-#          name: Delete frontend stack
-#          when: on_fail
-#          command: |
-#            aws cloudformation delete-stack \
-#            --stack-name udapeople-frontend-${CIRCLE_WORKFLOW_ID:0:7}
-#      - run:
-#          name: Delete backend stack
-#          when: on_fail
-#          command: |
-#            aws cloudformation delete-stack \
-#            --stack-name udapeople-backend-${CIRCLE_WORKFLOW_ID:0:7}
+  destroy-environment:
+    description: Destroy back-end and front-end cloudformation stacks given a workflow ID.
+    steps:
+      - run:
+          name: Install AWS CLI
+          when: on_fail
+          command: |
+            if ! [ -x "$(command -v aws)" ]; then
+            pip install awscli
+            else
+            echo "AWS CLI already installed"
+            fi
+
+      - run:
+          name: Remove S3 files
+          when: on_fail
+          command: |
+            aws s3 rm s3://udapeople-${CIRCLE_WORKFLOW_ID:0:7} \
+            --recursive
+      - run:
+          name: Delete S3 bucket
+          when: on_fail
+          command: |
+            aws s3 rb s3://udapeople-${CIRCLE_WORKFLOW_ID:0:7} \
+            --force
+      - run:
+          name: Delete frontend stack
+          when: on_fail
+          command: |
+            aws cloudformation delete-stack \
+            --stack-name udapeople-frontend-${CIRCLE_WORKFLOW_ID:0:7}
+      - run:
+          name: Delete backend stack
+          when: on_fail
+          command: |
+            aws cloudformation delete-stack \
+            --stack-name udapeople-backend-${CIRCLE_WORKFLOW_ID:0:7}
 
 
   revert-migrations:
     description: Revert the last migration if successfully run in the current workflow.
+    docker:
+      - image: circleci/node:13.8.0
     steps:
       - run:
           name: Revert migrations
@@ -196,7 +198,7 @@ jobs:
             - inventory.txt
             - IP.txt
       - revert-migrations
-#      - destroy-environment
+      - destroy-environment
 
 
   configure-infrastructure:
@@ -224,7 +226,7 @@ jobs:
             cd .circleci/ansible
             ANSIBLE_HOST_KEY_CHECKING=False ansible-playbook -i inventory.txt configure-server.yml
       - revert-migrations
-#      - destroy-environment
+      - destroy-environment
 
 
   run-migrations:
@@ -268,7 +270,7 @@ jobs:
              --data "0" https://api.memstash.io/values/migration_status_${CIRCLE_WORKFLOW_ID}
              fi
       - revert-migrations
-#      - destroy-environment
+      - destroy-environment
 
   deploy-frontend:
     docker:
@@ -292,7 +294,7 @@ jobs:
               cd ./frontend
               touch ./.env
               echo API_URL=$API_URL >> ./.env
-              echo $API_URL
+              cat ./.env
       - run:
           name: Deploy frontend objects
           command: |
@@ -300,10 +302,11 @@ jobs:
               cd ./frontend
               npm install
               npm run build
+              tar -czvf artifact-"${CIRCLE_WORKFLOW_ID:0:7}".tar.gz dist
               aws s3 cp ./dist s3://udapeople-"${CIRCLE_WORKFLOW_ID:0:7}" --recursive
 
       - revert-migrations
-#      - destroy-environment
+      - destroy-environment
 
 
   deploy-backend:
@@ -344,10 +347,18 @@ jobs:
       - run:
           name: Deploy backend
           command: |
-            cd ./.circleci/ansible
-            ANSIBLE_HOST_KEY_CHECKING=False ansible-playbook -i inventory.txt deploy-backend.yml
+            cd backend
+            npm i
+            npm run build
+            cd ..
+            tar -C backend -czvf artifact.tar.gz .
+            cd .circleci/ansible
+            echo "Contents  of the inventory.txt file is -------"
+            cat inventory.txt
+            ansible-playbook -i inventory.txt deploy-backend.yml
+
       - revert-migrations
-#      - destroy-environment
+      - destroy-environment
 
   smoke-test:
     docker:
@@ -369,22 +380,26 @@ jobs:
             backendIP=`cat ./.circleci/ansible/IP.txt`
             echo $backendIP
             sleep 20
-            URL="http://$backendIP:3030/api/status"
-            echo $URL
-            curl -s $URL
+            if curl "http://$backendIP:3030/api/status"| grep "ok"
+            then
+                return 0
+            else
+                return 1
+            fi
       - run:
           name: Frontend smoke test.
           command: |
-            URL="http://udapeople-${CIRCLE_WORKFLOW_ID}.s3-website-us-east-2.amazonaws.com"
-            if curl -s ${URL} | grep "Welcome"
-            then
-             return 1
-            else
-             return 0
-            fi
 
+            URL="http://udapeople-${CIRCLE_WORKFLOW_ID:0:7}.s3-website-us-east-2.amazonaws.com/#/employees"
+             echo ${URL}
+             if curl -s ${URL} | grep "Welcome"
+             then
+               return 0
+             else
+               return 1
+             fi
       - revert-migrations
-#      - destroy-environment
+      - destroy-environment
 
 
 
