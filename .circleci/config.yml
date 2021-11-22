@@ -370,7 +370,7 @@ jobs:
             echo $backendIP
             sleep 20
             URL="http://$backendIP:3030/api/status"
-            echo $URLf
+            echo $URL
             curl -s $URL
       - run:
           name: Frontend smoke test.
