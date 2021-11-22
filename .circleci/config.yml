@@ -380,23 +380,19 @@ jobs:
             backendIP=`cat ./.circleci/ansible/IP.txt`
             echo $backendIP
             sleep 20
-            if curl "http://$backendIP:3030/api/status"| grep "ok"
-            then
-                return 0
-            else
-                return 1
-            fi
+            URL="http://$backendIP:3030/api/status"
+            curl -s $URL
       - run:
           name: Frontend smoke test.
           command: |
 
-            URL="http://udapeople-${CIRCLE_WORKFLOW_ID:0:7}.s3-website-us-east-1.amazonaws.com/#/employees"
+            URL="http://udapeople-${CIRCLE_WORKFLOW_ID:0:7}.s3-website-us-east-2.amazonaws.com"
              echo ${URL}
              if curl -s ${URL} | grep "Welcome"
              then
-               return 0
-             else
                return 1
+             else
+               return 0
              fi
       - revert-migrations
       - destroy-environment
