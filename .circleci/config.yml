@@ -366,10 +366,12 @@ jobs:
       - run:
           name: Install dependencies
           command: |
+            apk add --update nodejs npm
             apk add --update curl
             apk add --update tar
             apk add --update gzip
             apk add --update curl
+
       - attach_workspace:
           at: .circleci/ansible/
       - run:
