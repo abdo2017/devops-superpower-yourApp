@@ -14,11 +14,6 @@
     production: yes
     state: present
 
-- name: Install Node
-  shell: |
-    cd /home/ubuntu/backend
-    npm install
-
 - name: Creates directory
   file:
     path: /home/ubuntu/backend
@@ -36,13 +31,31 @@
     ls -la
 
 
-- name: Build Node
-  shell: |
-    cd /home/ubuntu/backend
-    npm install
-    npm run build
+- name: install deps
+  become: yes
+  command: npm install
+  args:
+    chdir: /home/ubuntu/backend
+
+- name: build npm backend
+  become: yes
+  command: npm run build
+  args:
+    chdir: /home/ubuntu/backend
 
 - name: Start PM2
-  shell: |
-    cd /home/ubuntu/backend
-    pm2 start npm --name backend -- start
+  become: yes
+  command: pm2 start npm -- run start
+  args:
+    chdir: /home/ubuntu/backend
+  environment:
+    ENVIRONMENT: production
+    TYPEORM_CONNECTION: postgres
+    TYPEORM_ENTITIES: ./src/modules/domain/**/*.entity.ts
+    TYPEORM_MIGRATIONS_DIR: ./src/migrations
+    TYPEORM_MIGRATIONS: ./src/migrations./*.ts
+    TYPEORM_HOST: "{{ lookup('env', 'TYPEORM_HOST') }}"
+    TYPEORM_PORT: "{{ lookup('env', 'TYPEORM_PORT') }}"
+    TYPEORM_USERNAME: "{{ lookup('env', 'TYPEORM_USERNAME') }}"
+    TYPEORM_PASSWORD: "{{ lookup('env', 'TYPEORM_PASSWORD') }}"
+    TYPEORM_DATABASE: "{{ lookup('env', 'TYPEORM_DATABASE') }}"
