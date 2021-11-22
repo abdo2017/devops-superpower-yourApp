@@ -15,9 +15,12 @@
     state: present
 
 - name: Creates directory
+  become: yes
   file:
     path: /home/ubuntu/backend
     state: directory
+    mode: 0755
+
 
 - name: Copy backend dist files web server
   copy:
@@ -27,35 +30,22 @@
 - name: Uncompress Backend
   shell: |
     cd /home/ubuntu/backend
-    tar xvzf artifact.tar.gz -C .
-    ls -la
+    tar -vxf artifact.tar.gz
+    rm -f artifact.tar.gz
 
 
 - name: install deps
-  become: yes
-  command: npm install
-  args:
-    chdir: /home/ubuntu/backend
+  shell: |
+    cd ~/backend
+    npm install
+    npm run build
 
-- name: build npm backend
-  become: yes
-  command: npm run build
-  args:
-    chdir: /home/ubuntu/backend
 
-- name: Start PM2
-  become: yes
-  command: pm2 start npm -- run start
-  args:
-    chdir: /home/ubuntu/backend
-  environment:
-    ENVIRONMENT: production
-    TYPEORM_CONNECTION: postgres
-    TYPEORM_ENTITIES: ./src/modules/domain/**/*.entity.ts
-    TYPEORM_MIGRATIONS_DIR: ./src/migrations
-    TYPEORM_MIGRATIONS: ./src/migrations./*.ts
-    TYPEORM_HOST: "{{ lookup('env', 'TYPEORM_HOST') }}"
-    TYPEORM_PORT: "{{ lookup('env', 'TYPEORM_PORT') }}"
-    TYPEORM_USERNAME: "{{ lookup('env', 'TYPEORM_USERNAME') }}"
-    TYPEORM_PASSWORD: "{{ lookup('env', 'TYPEORM_PASSWORD') }}"
-    TYPEORM_DATABASE: "{{ lookup('env', 'TYPEORM_DATABASE') }}"
+- name: start the app
+  shell: |
+    cd ~/backend
+    pm2 stop default
+    pm2 start npm -- start
+    cd dist
+    pm2 start main.js --update-env
+
