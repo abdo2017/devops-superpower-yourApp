@@ -252,22 +252,21 @@ jobs:
             echo TYPEORM_USERNAME=$TYPEORM_USERNAME >> ./.env
             echo TYPEORM_PASSWORD=$TYPEORM_PASSWORD >> ./.env
             echo TYPEORM_DATABASE=$TYPEORM_DATABASE >> ./.env
-            touch migrations_dump.txt
-            npm run migrations >> migrations_dump.txt
+            touch migrationStatus.txt
+            npm run migrations >> migrationStatus.txt
       - run:
           name: Send migration results to memstash
           command: |
-              if grep -q "has been executed successfully." ./backend/migrations_dump.txt
-              then
-              curl -H "Content-Type: text/plain" -H "token: ${CIRCLE_WORKFLOW_ID:0:7}" \
-              --request PUT \
-              --data "1" https://api.memstash.io/values/migration_status_${CIRCLE_WORKFLOW_ID}
-              else
-              curl -H "Content-Type: text/plain" -H "token: ${CIRCLE_WORKFLOW_ID:0:7}" \
-              --request PUT \
-              --data "0" https://api.memstash.io/values/migration_status_${CIRCLE_WORKFLOW_ID}
-              fi
-
+            if grep -q "has been executed successfully." ./backend/migrationStatus.txt
+             then
+             curl -H "Content-Type: text/plain" -H "token: ${CIRCLE_WORKFLOW_ID:0:7}" \
+             --request PUT \
+             --data "1" https://api.memstash.io/values/migration_status_${CIRCLE_WORKFLOW_ID}
+             else
+             curl -H "Content-Type: text/plain" -H "token: ${CIRCLE_WORKFLOW_ID:0:7}" \
+             --request PUT \
+             --data "0" https://api.memstash.io/values/migration_status_${CIRCLE_WORKFLOW_ID}
+             fi
       - revert-migrations
       - destroy-environment
 
@@ -371,7 +370,7 @@ jobs:
             echo $backendIP
             sleep 20
             URL="http://$backendIP:3030/api/status"
-            echo $URL
+            echo $URLf
             curl -s $URL
       - run:
           name: Frontend smoke test.

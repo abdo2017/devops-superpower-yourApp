@@ -24,14 +24,10 @@
     cd /home/ubuntu/backend
     npm install
 
-
 - name: Build Node
   shell: |
     cd /home/ubuntu/backend
     npm run build
-
-
-
 
 - name: Start PM2
   shell: |
