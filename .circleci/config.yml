@@ -50,7 +50,7 @@ commands:
             --request GET https://api.memstash.io/values/migration_status_${CIRCLE_WORKFLOW_ID})
             if [[ $migrationSuccess==1 ]]
             then
-              cd /home/circleci/project/backend
+              cd ~/backend
               npm install
               npm run migrations:revert
             fi
@@ -364,18 +364,12 @@ jobs:
             apk add --update curl
       - attach_workspace:
           at: .circleci/ansible/
-
-      - run:
-          name: Get backend url
-          command: |
-            BACKEND_IP=$(curl -H "token: ${CIRCLE_WORKFLOW_ID:0:7}" \
-              --request GET https://api.memstash.io/values/hosts-deployed-${CIRCLE_WORKFLOW_ID:0:7})
-            export API_URL="http://${BACKEND_IP}:3030/api/status"
       - run:
           name: Backend smoke test.
           command: |
             backendIP=`cat ./.circleci/ansible/IP.txt`
             echo $backendIP
+            sleep 20
             URL="http://$backendIP:3030/api/status"
             echo $URL
             curl -s $URL
