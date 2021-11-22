@@ -184,21 +184,12 @@ jobs:
       - run:
           name: add backend ip to memstash to use it for later use
           command: |
-
-
-            curl -H "Content-Type: text/plain" -H \
-            "token: f2bdc12b-0f91-4e8e-af0e-527a6b467cd5" \
-            --request PUT --data "" \
-            https://api.memstash.io/values/ip_name
-
-
-
-
             aws ec2 describe-instances \
             --query 'Reservations[*].Instances[*].PublicIpAddress' \
-            --filters "Name=tag:project,Values=udapeople-backend" \
+            --filters "Name=tag:project,Values=udapeople-backend-${CIRCLE_WORKFLOW_ID:0:7}" \
             --output text > ./.circleci/ansible/IP.txt
             cat ./.circleci/ansible/IP.txt
+
       - persist_to_workspace:
           root: .circleci/ansible/
           paths:
