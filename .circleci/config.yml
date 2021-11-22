@@ -174,12 +174,13 @@ jobs:
       - run:
           name: Add back-end ip to ansible inventory
           command: |
-            echo -e "[web]\n" > ./.circleci/ansible/inventory.txt
+
             aws ec2 describe-instances \
-            --query 'Reservations[*].Instances[*].PublicIpAddress' \
-            --filters "Name=tag:project,Values=udapeople-backend-${CIRCLE_WORKFLOW_ID:0:7}" \
-            --output text >> ./.circleci/ansible/inventory.txt
-            cat ./.circleci/ansible/inventory.txt
+              --query 'Reservations[].Instances[].PublicIpAddress' \
+              --filters "Name=tag:project,Values=udapeople-backend-${CIRCLE_WORKFLOW_ID:0:7}" \
+              --output text >> .circleci/ansible/inventory.txt
+
+            cat .circleci/ansible/inventory.txt
 
       - run:
           name: add backend ip to a file fo later use
@@ -223,6 +224,7 @@ jobs:
           command: |
             cd .circleci/ansible
             ANSIBLE_HOST_KEY_CHECKING=False ansible-playbook -i inventory.txt configure-server.yml
+            cat inventory.txt
       - revert-migrations
       - destroy-environment
 
