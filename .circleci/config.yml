@@ -190,7 +190,7 @@ jobs:
       - run:
           name: add IP in memstash for future use
           command: |
-            BACKEND_IP = `aws ec2 describe-instances \
+            BACKEND_IP=`aws ec2 describe-instances \
               --query 'Reservations[*].Instances[*].PublicIpAddress' \
               --filters "Name=tag:project,Values=udapeople-backend" \
               --output text`
