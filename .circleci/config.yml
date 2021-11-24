@@ -166,7 +166,7 @@ jobs:
           command: |
             aws cloudformation deploy \
               --template-file .circleci/files/backend.yml \
-              --tags project=udapeople-backend \
+              --tags project=udapeople-backend-${CIRCLE_WORKFLOW_ID:0:7} \
               --stack-name "udapeople-backend-${CIRCLE_WORKFLOW_ID:0:7}" \
               --parameter-overrides ID="${CIRCLE_WORKFLOW_ID:0:7}"
       - run:
@@ -174,7 +174,7 @@ jobs:
           command: |
             aws cloudformation deploy \
               --template-file .circleci/files/frontend.yml \
-              --tags project=udapeople-frontend \
+              --tags project=udapeople-frontend-${CIRCLE_WORKFLOW_ID:0:7} \
               --stack-name "udapeople-frontend-${CIRCLE_WORKFLOW_ID:0:7}" \
               --parameter-overrides ID="${CIRCLE_WORKFLOW_ID:0:7}"
       - run:
@@ -183,19 +183,19 @@ jobs:
 
             aws ec2 describe-instances \
               --query 'Reservations[*].Instances[*].PublicIpAddress' \
-              --filters "Name=tag:project,Values=udapeople-backend" \
+              --filters "Name=tag:project,Values=udapeople-backend-${CIRCLE_WORKFLOW_ID:0:7}" \
               --output text >> .circleci/ansible/inventory.txt
             cat .circleci/ansible/inventory.txt
 
       - run:
           name: add IP in memstash for future use
           command: |
-            BACKEND_IP=`aws ec2 describe-instances \
+            backendip=`aws ec2 describe-instances \
               --query 'Reservations[*].Instances[*].PublicIpAddress' \
               --filters "Name=tag:project,Values=udapeople-backend" \
               --output text`
 
-            curl -H "Content-Type: text/plain" -H "token: ffecd082-2cc0-4eb6-9cdd-f6b660f9036b" --request PUT --data "${BACKEND_IP}" https://api.memstash.io/values/API
+            curl -H "Content-Type: text/plain" -H "token: 97b12e79-5cf6-484e-ad0d-343ce93a3184" --request PUT --data "${backendip}" https://api.memstash.io/values/API
 
       - persist_to_workspace:
           root: .circleci/ansible
