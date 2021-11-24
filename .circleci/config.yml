@@ -298,7 +298,7 @@ jobs:
       - run:
           name: Get backend url
           command: |
-              backendIP=`curl -H "token:   ffecd082-2cc0-4eb6-9cdd-f6b660f9036b" --request GET https://api.memstash.io/values/API`
+              backendIP=`curl -H "token: e0905d35-5c2c-4f0b-bdc2-8b0bf419aeff" --request GET https://api.memstash.io/values/API`
               export API_URL="http://${backendIP}:3030"
               pwd
               cd frontend
@@ -387,7 +387,7 @@ jobs:
       - run:
           name: Backend smoke test.
           command: |
-            API_URL=`curl -H "token:   ffecd082-2cc0-4eb6-9cdd-f6b660f9036b" --request GET https://api.memstash.io/values/API`
+            API_URL=`curl -H "token: e0905d35-5c2c-4f0b-bdc2-8b0bf419aeff" --request GET https://api.memstash.io/values/API`
             echo "${API_URL}"
             if curl "${API_URL}:3030/api/status" | grep "ok"
             then
