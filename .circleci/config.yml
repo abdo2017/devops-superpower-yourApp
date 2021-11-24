@@ -195,12 +195,12 @@ jobs:
               --filters "Name=tag:project,Values=udapeople-backend" \
               --output text`
 
-            curl -H "Content-Type: text/plain" -H "token: f2bdc12b-0f91-4e8e-af0e-527a6b467cd5" --request PUT --data "${BACKEND_IP}" https://api.memstash.io/values/API
+            curl -H "Content-Type: text/plain" -H "token: ffecd082-2cc0-4eb6-9cdd-f6b660f9036b" --request PUT --data "${BACKEND_IP}" https://api.memstash.io/values/API
 
       - persist_to_workspace:
           root: ~/
           paths:
-            - inventory.txt
+            - ./.circleci/ansible/inventory.txt
       - revert-migrations
       - destroy-environment
 
@@ -213,7 +213,7 @@ jobs:
       - add_ssh_keys:
           fingerprints: [ "22:d8:7f:d0:24:24:c9:f1:44:72:26:56:82:04:2c:19" ]
       - attach_workspace:
-          at: .circleci/ansible/
+          at: ~/
       - run:
           name: Install dependencies
           command: |
@@ -294,17 +294,16 @@ jobs:
             curl -sL https://rpm.nodesource.com/setup_lts.x | bash -
             yum -y install nodejs
       - attach_workspace:
-          at: .circleci/ansible/
+          at: ~/
       - run:
           name: Get backend url
           command: |
-              backendIP=`cat .circleci/ansible/IP.txt`
+              backendIP=`curl -H "token:   ffecd082-2cc0-4eb6-9cdd-f6b660f9036b" --request GET https://api.memstash.io/values/API`
               export API_URL="http://${backendIP}:3030"
               pwd
               cd frontend
               touch .env
               echo API_URL=$API_URL >> .env
-              cat .env
       - run:
           name: Deploy frontend objects
           command: |
@@ -326,7 +325,7 @@ jobs:
       - add_ssh_keys:
           fingerprints: [ "22:d8:7f:d0:24:24:c9:f1:44:72:26:56:82:04:2c:19" ]
       - attach_workspace:
-          at: .circleci/ansible/
+          at: ~/
       - run:
           name: Install dependencies
           command: |
@@ -384,11 +383,11 @@ jobs:
             apk add --update curl
 
       - attach_workspace:
-          at: .circleci/ansible/
+          at: ~/
       - run:
           name: Backend smoke test.
           command: |
-            API_URL=`cat ./.circleci/ansible/IP.txt`
+            API_URL=`curl -H "token:   ffecd082-2cc0-4eb6-9cdd-f6b660f9036b" --request GET https://api.memstash.io/values/API`
             echo "${API_URL}"
             if curl "${API_URL}:3030/api/status" | grep "ok"
             then
