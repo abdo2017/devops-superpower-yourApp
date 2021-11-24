@@ -158,17 +158,15 @@ jobs:
           name: install deps
           command: |
             yum -y install tar gzip
-      - run:
-          name: install node.js
-          command: |
             curl --silent --location https://rpm.nodesource.com/setup_14.x | bash -
             yum -y install nodejs
+
       - run:
           name: Ensure back-end infrastructure exists
           command: |
             aws cloudformation deploy \
               --template-file .circleci/files/backend.yml \
-              --tags project=udapeople-backend-${CIRCLE_WORKFLOW_ID:0:7} \
+              --tags project=udapeople-backend \
               --stack-name "udapeople-backend-${CIRCLE_WORKFLOW_ID:0:7}" \
               --parameter-overrides ID="${CIRCLE_WORKFLOW_ID:0:7}"
       - run:
@@ -176,34 +174,33 @@ jobs:
           command: |
             aws cloudformation deploy \
               --template-file .circleci/files/frontend.yml \
-              --tags project=udapeople-frontend-${CIRCLE_WORKFLOW_ID:0:7} \
+              --tags project=udapeople-frontend \
               --stack-name "udapeople-frontend-${CIRCLE_WORKFLOW_ID:0:7}" \
               --parameter-overrides ID="${CIRCLE_WORKFLOW_ID:0:7}"
       - run:
           name: Add back-end ip to ansible inventory
           command: |
-            cd .circleci/ansible
+
             aws ec2 describe-instances \
               --query 'Reservations[*].Instances[*].PublicIpAddress' \
-              --filters "Name=tag:project,Values=udapeople-backend-${CIRCLE_WORKFLOW_ID:0:7}" \
-              --output text >> inventory.txt
-            cat inventory.txt
+              --filters "Name=tag:project,Values=udapeople-backend" \
+              --output text >> .circleci/ansible/inventory.txt
+            cat .circleci/ansible/inventory.txt
 
       - run:
-          name: add backend ip to a file fo later use
+          name: add IP in memstash for future use
           command: |
-            cd .circleci/ansible
-            aws ec2 describe-instances \
-            --query 'Reservations[*].Instances[*].PublicIpAddress' \
-            --filters "Name=tag:project,Values=udapeople-backend-${CIRCLE_WORKFLOW_ID:0:7}" \
-            --output text > IP.txt
-            cat IP.txt
+            BACKEND_IP = `aws ec2 describe-instances \
+              --query 'Reservations[*].Instances[*].PublicIpAddress' \
+              --filters "Name=tag:project,Values=udapeople-backend" \
+              --output text`
+
+            curl -H "Content-Type: text/plain" -H "token: f2bdc12b-0f91-4e8e-af0e-527a6b467cd5" --request PUT --data "${BACKEND_IP}" https://api.memstash.io/values/API
 
       - persist_to_workspace:
-          root: .circleci/ansible/
+          root: ~/
           paths:
             - inventory.txt
-            - IP.txt
       - revert-migrations
 #      - destroy-environment
 
