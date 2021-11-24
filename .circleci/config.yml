@@ -198,9 +198,9 @@ jobs:
             curl -H "Content-Type: text/plain" -H "token: ffecd082-2cc0-4eb6-9cdd-f6b660f9036b" --request PUT --data "${BACKEND_IP}" https://api.memstash.io/values/API
 
       - persist_to_workspace:
-          root: ~/
+          root: .circleci/ansible
           paths:
-            - ./.circleci/ansible/inventory.txt
+            - inventory.txt
       - revert-migrations
       - destroy-environment
 
@@ -213,7 +213,7 @@ jobs:
       - add_ssh_keys:
           fingerprints: [ "22:d8:7f:d0:24:24:c9:f1:44:72:26:56:82:04:2c:19" ]
       - attach_workspace:
-          at: ~/
+          at: .circleci/ansible
       - run:
           name: Install dependencies
           command: |
@@ -294,7 +294,7 @@ jobs:
             curl -sL https://rpm.nodesource.com/setup_lts.x | bash -
             yum -y install nodejs
       - attach_workspace:
-          at: ~/
+          at: .circleci/ansible
       - run:
           name: Get backend url
           command: |
@@ -325,7 +325,7 @@ jobs:
       - add_ssh_keys:
           fingerprints: [ "22:d8:7f:d0:24:24:c9:f1:44:72:26:56:82:04:2c:19" ]
       - attach_workspace:
-          at: ~/
+          at: .circleci/ansible
       - run:
           name: Install dependencies
           command: |
@@ -383,7 +383,7 @@ jobs:
             apk add --update curl
 
       - attach_workspace:
-          at: ~/
+          at: .circleci/ansible
       - run:
           name: Backend smoke test.
           command: |
