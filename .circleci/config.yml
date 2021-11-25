@@ -357,8 +357,10 @@ jobs:
             sudo apt upgrade -y
             sudo apt install -y curl
             sudo apt install -y awscli
-            sudo apt install -y nodejs
-            sudo apt install -y npm
+            curl -sL https://deb.nodesource.com/setup_12.x | sudo -E bash -
+            sudo apt install nodejs
+            node --version
+            npm --version
       - attach_workspace:
           at: .circleci/ansible
       - run:
