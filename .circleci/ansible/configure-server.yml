@@ -48,4 +48,4 @@
         echo TYPEORM_MIGRATIONS_DIR=\"$TYPEORM_MIGRATIONS_DIR\" >> /etc/environment
   roles:
     - configure-server
-    - configure-prometheus-node-exporter
+#    - configure-prometheus-node-exporter
