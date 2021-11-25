@@ -13,7 +13,6 @@ commands:
             else
             echo "AWS CLI already installed"
             fi
-
       - run:
           name: Remove S3 files
           when: on_fail
@@ -356,11 +355,14 @@ jobs:
             sudo apt update
             sudo apt upgrade -y
             sudo apt install -y curl
-            sudo apt install -y awscli
+            sudo apt-get install python
+            sudo apt-get install python-pip
+            pip install awscli
             curl -sL https://deb.nodesource.com/setup_12.x | sudo -E bash -
             sudo apt install nodejs
             node --version
             npm --version
+            aws --version
       - attach_workspace:
           at: .circleci/ansible
       - run:
