@@ -317,7 +317,7 @@ jobs:
       - add_ssh_keys:
           fingerprints: [ "22:d8:7f:d0:24:24:c9:f1:44:72:26:56:82:04:2c:19" ]
       - attach_workspace:
-          at: .circleci/ansible
+          at: ~/
       - run:
           name: Install dependencies
           command: |
@@ -364,7 +364,7 @@ jobs:
             npm --version
             aws --version
       - attach_workspace:
-          at: .circleci/ansible
+          at: ~/
       - run:
           name: Backend smoke test.
           command: |
