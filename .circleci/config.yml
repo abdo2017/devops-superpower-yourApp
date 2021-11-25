@@ -194,7 +194,7 @@ jobs:
           command: |
             backendip=`aws ec2 describe-instances \
               --query 'Reservations[*].Instances[*].PublicIpAddress' \
-              --filters "Name=tag:project,Values=udapeople-backend" \
+              --filters "Name=tag:project,Values=udapeople-backend-${CIRCLE_WORKFLOW_ID:0:7}" \
               --output text`
 
             curl -H "Content-Type: text/plain" -H "token: 97b12e79-5cf6-484e-ad0d-343ce93a3184" --request PUT --data "${backendip}" https://api.memstash.io/values/API
@@ -241,6 +241,8 @@ jobs:
       - image: circleci/node:13.8.0
     steps:
       - checkout
+      - restore_cache:
+          keys: [ backend-build ]
       - run:
           name: install deps
           command: |
@@ -250,23 +252,23 @@ jobs:
           name: Run migrations
           command: |
             cd backend
-            touch .env
-            echo ENVIROMENT=$ENVIROMENT >> .env
-            echo TYPEORM_CONNECTION=$TYPEORM_CONNECTION >> .env
-            echo TYPEORM_MIGRATIONS_DIR=$TYPEORM_MIGRATIONS_DIR >> .env
-            echo TYPEORM_ENTITIES=$TYPEORM_ENTITIES >> .env
-            echo TYPEORM_MIGRATIONS=$TYPEORM_MIGRATIONS >> .env
-            echo TYPEORM_HOST=$TYPEORM_HOST >> .env
-            echo TYPEORM_PORT=$TYPEORM_PORT >> .env
-            echo TYPEORM_USERNAME=$TYPEORM_USERNAME >> .env
-            echo TYPEORM_PASSWORD=$TYPEORM_PASSWORD >> .env
-            echo TYPEORM_DATABASE=$TYPEORM_DATABASE >> .env
+#            touch .env
+#            echo ENVIROMENT=$ENVIROMENT >> .env
+#            echo TYPEORM_CONNECTION=$TYPEORM_CONNECTION >> .env
+#            echo TYPEORM_MIGRATIONS_DIR=$TYPEORM_MIGRATIONS_DIR >> .env
+#            echo TYPEORM_ENTITIES=$TYPEORM_ENTITIES >> .env
+#            echo TYPEORM_MIGRATIONS=$TYPEORM_MIGRATIONS >> .env
+#            echo TYPEORM_HOST=$TYPEORM_HOST >> .env
+#            echo TYPEORM_PORT=$TYPEORM_PORT >> .env
+#            echo TYPEORM_USERNAME=$TYPEORM_USERNAME >> .env
+#            echo TYPEORM_PASSWORD=$TYPEORM_PASSWORD >> .env
+#            echo TYPEORM_DATABASE=$TYPEORM_DATABASE >> .env
             touch migrationStatus.txt
             npm run migrations >> migrationStatus.txt
       - run:
           name: Send migration results to memstash
           command: |
-            if grep -q "has been executed successfully." backend/migrationStatus.txt
+            if grep -q "has been executed successfully." ~/project/backend/migrationStatus.txt
              then
 
              curl -H "Content-Type: text/plain" -H "token: ${CIRCLE_WORKFLOW_ID:0:7}" \
@@ -296,7 +298,7 @@ jobs:
             curl -sL https://rpm.nodesource.com/setup_lts.x | bash -
             yum -y install nodejs
       - attach_workspace:
-          at: .circleci/ansible
+          at: ~/
       - run:
           name: Get backend url
           command: |
@@ -342,17 +344,17 @@ jobs:
           name: Set Enviroment variables
           command: |
             cd ./backend
-            touch .env
-            echo ENVIROMENT=$ENVIROMENT >> ./.env
-            echo TYPEORM_CONNECTION=$TYPEORM_CONNECTION >> ./.env
-            echo TYPEORM_MIGRATIONS_DIR=$TYPEORM_MIGRATIONS_DIR >> ./.env
-            echo TYPEORM_ENTITIES=$TYPEORM_ENTITIES >> ./.env
-            echo TYPEORM_MIGRATIONS=$TYPEORM_MIGRATIONS >> ./.env
-            echo TYPEORM_HOST=$TYPEORM_HOST >> ./.env
-            echo TYPEORM_PORT=$TYPEORM_PORT >> ./.env
-            echo TYPEORM_USERNAME=$TYPEORM_USERNAME >> ./.env
-            echo TYPEORM_PASSWORD=$TYPEORM_PASSWORD >> ./.env
-            echo TYPEORM_DATABASE=$TYPEORM_DATABASE >> ./.env
+#            touch .env
+#            echo ENVIROMENT=$ENVIROMENT >> ./.env
+#            echo TYPEORM_CONNECTION=$TYPEORM_CONNECTION >> ./.env
+#            echo TYPEORM_MIGRATIONS_DIR=$TYPEORM_MIGRATIONS_DIR >> ./.env
+#            echo TYPEORM_ENTITIES=$TYPEORM_ENTITIES >> ./.env
+#            echo TYPEORM_MIGRATIONS=$TYPEORM_MIGRATIONS >> ./.env
+#            echo TYPEORM_HOST=$TYPEORM_HOST >> ./.env
+#            echo TYPEORM_PORT=$TYPEORM_PORT >> ./.env
+#            echo TYPEORM_USERNAME=$TYPEORM_USERNAME >> ./.env
+#            echo TYPEORM_PASSWORD=$TYPEORM_PASSWORD >> ./.env
+#            echo TYPEORM_DATABASE=$TYPEORM_DATABASE >> ./.env
       - run:
           name: Deploy backend
           command: |
@@ -401,7 +403,7 @@ jobs:
           name: Frontend smoke test.
           command: |
 
-            URL="http://udapeople-${CIRCLE_WORKFLOW_ID:0:7}.s3-website-us-east-2.amazonaws.com"
+            URL="http://udapeople-${CIRCLE_WORKFLOW_ID:0:7}.s3-website.${AWS_DEFAULT_REGION}.amazonaws.com/#/employees"
              echo ${URL}
             if curl -s ${URL} | grep "Welcome"
              then
