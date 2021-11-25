@@ -1,6 +1,6 @@
 version: 2.1
 
-commands:
+#commands:
 #  destroy-environment:
 #    description: Destroy back-end and front-end cloudformation stacks given a workflow ID.
 #    steps:
@@ -39,21 +39,21 @@ commands:
 #            --stack-name udapeople-backend-${CIRCLE_WORKFLOW_ID:0:7}
 
 
-  revert-migrations:
-    description: Revert the last migration if successfully run in the current workflow.
-    steps:
-      - run:
-          name: Revert migrations
-          when: on_fail
-          command: |
-            migrationSuccess=$(curl -H "token: ${CIRCLE_WORKFLOW_ID:0:7}" \
-            --request GET https://api.memstash.io/values/migration_status_${CIRCLE_WORKFLOW_ID})
-            if [[ $migrationSuccess==1 ]]
-            then
-              cd backend
-              npm install
-              npm run migrations:revert
-            fi
+#  revert-migrations:
+#    description: Revert the last migration if successfully run in the current workflow.
+#    steps:
+#      - run:
+#          name: Revert migrations
+#          when: on_fail
+#          command: |
+#            migrationSuccess=$(curl -H "token: ${CIRCLE_WORKFLOW_ID:0:7}" \
+#            --request GET https://api.memstash.io/values/migration_status_${CIRCLE_WORKFLOW_ID})
+#            if [[ $migrationSuccess==1 ]]
+#            then
+#              cd backend
+#              npm install
+#              npm run migrations:revert
+#            fi
 
 
 jobs:
@@ -202,7 +202,7 @@ jobs:
           root: ~/
           paths:
             - project/.circleci/ansible/inventory.txt
-      - revert-migrations
+#      - revert-migrations
 #      - destroy-environment
 
 
@@ -231,7 +231,7 @@ jobs:
             cd .circleci/ansible
             cat inventory.txt
             ansible-playbook -i inventory.txt configure-server.yml
-      - revert-migrations
+#      - revert-migrations
 #      - destroy-environment
 
 
@@ -270,7 +270,7 @@ jobs:
              --data "0" https://api.memstash.io/values/migration_status_${CIRCLE_WORKFLOW_ID}
 
              fi
-      - revert-migrations
+#      - revert-migrations
 #      - destroy-environment
 
   deploy-frontend:
@@ -305,7 +305,7 @@ jobs:
               tar -czvf artifact-"${CIRCLE_WORKFLOW_ID:0:7}".tar.gz dist
               aws s3 cp dist s3://udapeople-"${CIRCLE_WORKFLOW_ID:0:7}" --recursive
 
-      - revert-migrations
+#      - revert-migrations
 #      - destroy-environment
 
 
@@ -341,7 +341,7 @@ jobs:
             cat inventory.txt
             ansible-playbook -i inventory.txt deploy-backend.yml
 
-      - revert-migrations
+#      - revert-migrations
 #      - destroy-environment
 
   smoke-test:
@@ -392,7 +392,7 @@ jobs:
               echo "Frontend Smoke Test Failed"
                exit 1
              fi
-      - revert-migrations
+#      - revert-migrations
 #      - destroy-environment
 
 
