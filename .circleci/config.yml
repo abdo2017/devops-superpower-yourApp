@@ -368,29 +368,28 @@ jobs:
       - run:
           name: Backend smoke test.
           command: |
-            export backendURL=$(aws ec2 describe-instances \
-              --query 'Reservations[*].Instances[*].PublicIpAddress' \
-              --filters "Name=tag:project,Values=udapeople-backend-${CIRCLE_WORKFLOW_ID:0:7}" \
-              --output text)
-
+            backendURL="$(curl -H "token: 97b12e79-5cf6-484e-ad0d-343ce93a3184" --request GET https://api.memstash.io/values/API)"
             export API_URL="http://${backendURL}:3030"
-
             if curl "${API_URL}/api/status" | grep "ok"
             then
-                exit 0
+              echo "Backend Smoke Test Success"
+              exit 0
             else
-                exit  1
+              echo "Backend Smoke Test Failed"
+              exit  1
             fi
       - run:
           name: Frontend smoke test.
           command: |
 
-            URL="http://udapeople-${CIRCLE_WORKFLOW_ID:0:7}.s3-website.${AWS_DEFAULT_REGION}.amazonaws.com/#/employees"
+            URL="http://udapeople-${CIRCLE_WORKFLOW_ID:0:7}.s3-website-us-west-1.amazonaws.com/#/employees"
              echo ${URL}
             if curl -s ${URL} | grep "Welcome"
-             then
+            then
+              echo "Frontend Smoke Test Success"
                exit 0
              else
+              echo "Frontend Smoke Test Failed"
                exit 1
              fi
       - revert-migrations
