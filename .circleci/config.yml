@@ -347,26 +347,31 @@ jobs:
 
   smoke-test:
     docker:
-      - image: "python:3.7-alpine3.11"
+      - image: circleci/node:13.8.0
     steps:
       - checkout
       - run:
           name: Install dependencies
           command: |
-            apk add --update nodejs npm
-            apk add --update curl
-            apk add --update tar
-            apk add --update gzip
-            apk add --update curl
-
+            sudo apt update
+            sudo apt upgrade -y
+            sudo apt install -y curl
+            sudo apt install -y awscli
+            sudo apt install -y nodejs
+            sudo apt install -y npm
       - attach_workspace:
           at: .circleci/ansible
       - run:
           name: Backend smoke test.
           command: |
-            API_URL=`curl -H "token: 97b12e79-5cf6-484e-ad0d-343ce93a3184" --request GET https://api.memstash.io/values/API`
-            echo "${API_URL}"
-            if curl "${API_URL}:3030/api/status" | grep "ok"
+            backendURL=`aws ec2 describe-instances \
+              --query 'Reservations[*].Instances[*].PublicIpAddress' \
+              --filters "Name=tag:project,Values=udapeople-backend-${CIRCLE_WORKFLOW_ID:0:7}" \
+              --output text`
+
+            export API_URL="http://${backendURL}:3030"
+
+            if curl "${API_URL}/api/status" | grep "ok"
             then
                 return 0
             else
