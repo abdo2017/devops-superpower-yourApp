@@ -45,6 +45,7 @@ commands:
     steps:
       - run:
           name: Revert migrations
+          when: on_fail
           command: |
             migrationSuccess=$(curl -H "token: ${CIRCLE_WORKFLOW_ID:0:7}" \
             --request GET https://api.memstash.io/values/migration_status_${CIRCLE_WORKFLOW_ID})
@@ -54,7 +55,7 @@ commands:
               npm install
               npm run migrations:revert
             fi
-          when: on_fail
+
 
 jobs:
   build-frontend:
@@ -133,7 +134,7 @@ jobs:
             cd frontend
             npm i
             npm audit fix --audit-level=critical --force
-
+            npm audit --audit-level=critical
 
   scan-backend:
     docker:
@@ -148,6 +149,7 @@ jobs:
             cd backend
             npm i
             npm audit fix --audit-level=critical --force
+            npm audit --audit-level=critical
 
   deploy-infrastructure:
     docker:
@@ -198,9 +200,9 @@ jobs:
             curl -H "Content-Type: text/plain" -H "token: 97b12e79-5cf6-484e-ad0d-343ce93a3184" --request PUT --data "${backendip}" https://api.memstash.io/values/API
 
       - persist_to_workspace:
-          root: .circleci/ansible
+          root: ~/
           paths:
-            - inventory.txt
+            - project/.circleci/ansible/inventory.txt
       - revert-migrations
       - destroy-environment
 
@@ -213,7 +215,7 @@ jobs:
       - add_ssh_keys:
           fingerprints: [ "22:d8:7f:d0:24:24:c9:f1:44:72:26:56:82:04:2c:19" ]
       - attach_workspace:
-          at: .circleci/ansible
+          at: ~/
       - run:
           name: Install dependencies
           command: |
@@ -298,7 +300,7 @@ jobs:
       - run:
           name: Get backend url
           command: |
-              backendIP=`curl -H "token: e0905d35-5c2c-4f0b-bdc2-8b0bf419aeff" --request GET https://api.memstash.io/values/API`
+              backendIP=`curl -H "token: 97b12e79-5cf6-484e-ad0d-343ce93a3184" --request GET https://api.memstash.io/values/API`
               export API_URL="http://${backendIP}:3030"
               pwd
               cd frontend
@@ -387,7 +389,7 @@ jobs:
       - run:
           name: Backend smoke test.
           command: |
-            API_URL=`curl -H "token: e0905d35-5c2c-4f0b-bdc2-8b0bf419aeff" --request GET https://api.memstash.io/values/API`
+            API_URL=`curl -H "token: 97b12e79-5cf6-484e-ad0d-343ce93a3184" --request GET https://api.memstash.io/values/API`
             echo "${API_URL}"
             if curl "${API_URL}:3030/api/status" | grep "ok"
             then
