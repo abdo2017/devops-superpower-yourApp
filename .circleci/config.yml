@@ -1,42 +1,42 @@
 version: 2.1
 
 commands:
-  destroy-environment:
-    description: Destroy back-end and front-end cloudformation stacks given a workflow ID.
-    steps:
-      - run:
-          name: Install AWS CLI
-          when: on_fail
-          command: |
-            if ! [ -x "$(command -v aws)" ]; then
-            pip install awscli
-            else
-            echo "AWS CLI already installed"
-            fi
-      - run:
-          name: Remove S3 files
-          when: on_fail
-          command: |
-            aws s3 rm s3://udapeople-${CIRCLE_WORKFLOW_ID:0:7} \
-            --recursive
-      - run:
-          name: Delete S3 bucket
-          when: on_fail
-          command: |
-            aws s3 rb s3://udapeople-${CIRCLE_WORKFLOW_ID:0:7} \
-            --force
-      - run:
-          name: Delete frontend stack
-          when: on_fail
-          command: |
-            aws cloudformation delete-stack \
-            --stack-name udapeople-frontend-${CIRCLE_WORKFLOW_ID:0:7}
-      - run:
-          name: Delete backend stack
-          when: on_fail
-          command: |
-            aws cloudformation delete-stack \
-            --stack-name udapeople-backend-${CIRCLE_WORKFLOW_ID:0:7}
+#  destroy-environment:
+#    description: Destroy back-end and front-end cloudformation stacks given a workflow ID.
+#    steps:
+#      - run:
+#          name: Install AWS CLI
+#          when: on_fail
+#          command: |
+#            if ! [ -x "$(command -v aws)" ]; then
+#            pip install awscli
+#            else
+#            echo "AWS CLI already installed"
+#            fi
+#      - run:
+#          name: Remove S3 files
+#          when: on_fail
+#          command: |
+#            aws s3 rm s3://udapeople-${CIRCLE_WORKFLOW_ID:0:7} \
+#            --recursive
+#      - run:
+#          name: Delete S3 bucket
+#          when: on_fail
+#          command: |
+#            aws s3 rb s3://udapeople-${CIRCLE_WORKFLOW_ID:0:7} \
+#            --force
+#      - run:
+#          name: Delete frontend stack
+#          when: on_fail
+#          command: |
+#            aws cloudformation delete-stack \
+#            --stack-name udapeople-frontend-${CIRCLE_WORKFLOW_ID:0:7}
+#      - run:
+#          name: Delete backend stack
+#          when: on_fail
+#          command: |
+#            aws cloudformation delete-stack \
+#            --stack-name udapeople-backend-${CIRCLE_WORKFLOW_ID:0:7}
 
 
   revert-migrations:
@@ -203,7 +203,7 @@ jobs:
           paths:
             - project/.circleci/ansible/inventory.txt
       - revert-migrations
-      - destroy-environment
+#      - destroy-environment
 
 
   configure-infrastructure:
@@ -232,7 +232,7 @@ jobs:
             cat inventory.txt
             ansible-playbook -i inventory.txt configure-server.yml
       - revert-migrations
-      - destroy-environment
+#      - destroy-environment
 
 
   run-migrations:
@@ -271,7 +271,7 @@ jobs:
 
              fi
       - revert-migrations
-      - destroy-environment
+#      - destroy-environment
 
   deploy-frontend:
     docker:
@@ -306,7 +306,7 @@ jobs:
               aws s3 cp dist s3://udapeople-"${CIRCLE_WORKFLOW_ID:0:7}" --recursive
 
       - revert-migrations
-      - destroy-environment
+#      - destroy-environment
 
 
   deploy-backend:
@@ -342,7 +342,7 @@ jobs:
             ansible-playbook -i inventory.txt deploy-backend.yml
 
       - revert-migrations
-      - destroy-environment
+#      - destroy-environment
 
   smoke-test:
     docker:
@@ -393,7 +393,7 @@ jobs:
                exit 1
              fi
       - revert-migrations
-      - destroy-environment
+#      - destroy-environment
 
 
 
