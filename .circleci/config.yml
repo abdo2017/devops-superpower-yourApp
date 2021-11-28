@@ -130,6 +130,7 @@ jobs:
       - run:
           name: Front-end scan & analyz
           command: |
+            # doing some frontend
             cd frontend
             npm i
             npm audit fix --audit-level=critical --force
