@@ -1,5 +1,9 @@
 version: 2.1
 
+orbs:
+  slack: circleci/slack@4.5.0
+
+
 commands:
   destroy-environment:
     description: Destroy back-end and front-end cloudformation stacks given a workflow ID.
@@ -19,12 +23,6 @@ commands:
           command: |
             aws s3 rm s3://udapeople-${CIRCLE_WORKFLOW_ID:0:7} \
             --recursive
-      - run:
-          name: Delete S3 bucket
-          when: on_fail
-          command: |
-            aws s3 rb s3://udapeople-${CIRCLE_WORKFLOW_ID:0:7} \
-            --force
       - run:
           name: Delete frontend stack
           when: on_fail
@@ -203,6 +201,23 @@ jobs:
           root: ~/
           paths:
             - project/.circleci/ansible/inventory.txt
+      - slack/notify:
+          custom: |
+            {
+              "blocks": [
+                {
+                  "type": "section",
+                  "fields": [
+                    {
+                      "type": "plain_text",
+                      "text": "*This is a text notification*",
+                      "emoji": true
+                    }
+                  ]
+                }
+              ]
+            }
+          event: always
       - revert-migrations
       - destroy-environment
 
@@ -484,9 +499,11 @@ workflows:
           requires: [ build-frontend ]
       - deploy-infrastructure:
           requires: [ test-frontend, test-backend, scan-frontend, scan-backend ]
+          context: slack-secrets
           filters:
             branches:
               only: [main]
+
       - configure-infrastructure:
           requires: [ deploy-infrastructure ]
           filters:
