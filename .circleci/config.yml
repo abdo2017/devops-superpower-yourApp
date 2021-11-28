@@ -428,45 +428,45 @@ jobs:
       - revert-migrations
 #      - destroy-environment
 
-  cleanup:
-      docker:
-        - image: amazon/aws-cli
-      steps:
-        - checkout
-        - run:
-            name: install deps
-            command: |
-              yum -y install tar gzip
-              curl --silent --location https://rpm.nodesource.com/setup_14.x | bash -
-              yum -y install nodejs
-        - run:
-            name: Get old stack workflow id
-            command: |
-              OldWorkflowID=$(curl -H "token: ffecd082-2cc0-4eb6-9cdd-f6b660f9036b" --request GET https://api.memstash.io/values/oldworkflow)
-
-              echo OldWorkflowID: "${OldWorkflowID}"
-              echo CIRCLE_WORKFLOW_ID "${CIRCLE_WORKFLOW_ID:0:7}"
-
-              # Fetch the stack names
-              export STACKS=($(aws cloudformation list-stacks --query "StackSummaries[*].StackName" \
-                      --stack-status-filter CREATE_COMPLETE --no-paginate --output text))
-
-              #  add stacks in memstash
-              curl -H "Content-Type: text/plain" -H "token: ffecd082-2cc0-4eb6-9cdd-f6b660f9036b" --request PUT --data "$STACKS" https://api.memstash.io/values/stak_names
-
-              echo Stack names: "${STACKS[@]}"
-        - run:
-            name: Remove old stacks and files
-            command: |
-              if [[ "${STACKS[@]}" =~ "${OldWorkflowID}" ]]
-              then
-                aws s3 rm "s3://udapeople-${CIRCLE_WORKFLOW_ID:0:7}" --recursive
-                aws cloudformation delete-stack --stack-name "udapeople-backend-${OldWorkflowID:0:7}"
-                aws cloudformation delete-stack --stack-name "udapeople-frontend-${OldWorkflowID:0:7}"
-              fi
-
-        - revert-migrations
-#        - destroy-environment
+#  cleanup:
+#      docker:
+#        - image: amazon/aws-cli
+#      steps:
+#        - checkout
+#        - run:
+#            name: install deps
+#            command: |
+#              yum -y install tar gzip
+#              curl --silent --location https://rpm.nodesource.com/setup_14.x | bash -
+#              yum -y install nodejs
+#        - run:
+#            name: Get old stack workflow id
+#            command: |
+#              OldWorkflowID=$(curl -H "token: ffecd082-2cc0-4eb6-9cdd-f6b660f9036b" --request GET https://api.memstash.io/values/oldworkflow)
+#
+#              echo OldWorkflowID: "${OldWorkflowID}"
+#              echo CIRCLE_WORKFLOW_ID "${CIRCLE_WORKFLOW_ID:0:7}"
+#
+#              # Fetch the stack names
+#              export STACKS=($(aws cloudformation list-stacks --query "StackSummaries[*].StackName" \
+#                      --stack-status-filter CREATE_COMPLETE --no-paginate --output text))
+#
+#              #  add stacks in memstash
+#              curl -H "Content-Type: text/plain" -H "token: ffecd082-2cc0-4eb6-9cdd-f6b660f9036b" --request PUT --data "$STACKS" https://api.memstash.io/values/stak_names
+#
+#              echo Stack names: "${STACKS[@]}"
+#        - run:
+#            name: Remove old stacks and files
+#            command: |
+#              if [[ "${STACKS[@]}" =~ "${OldWorkflowID}" ]]
+#              then
+#                aws s3 rm "s3://udapeople-${CIRCLE_WORKFLOW_ID:0:7}" --recursive
+#                aws cloudformation delete-stack --stack-name "udapeople-backend-${OldWorkflowID:0:7}"
+#                aws cloudformation delete-stack --stack-name "udapeople-frontend-${OldWorkflowID:0:7}"
+#              fi
+#
+#        - revert-migrations
+##        - destroy-environment
 
 
 workflows:
@@ -517,8 +517,8 @@ workflows:
           filters:
             branches:
               only: [ main ]
-      - cleanup:
-          requires: [cloudfront-update]
-          filters:
-            branches:
-              only: [ main ]
+#      - cleanup:
+#          requires: [cloudfront-update]
+#          filters:
+#            branches:
+#              only: [ main ]
