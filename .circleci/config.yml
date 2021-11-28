@@ -395,43 +395,71 @@ jobs:
       - revert-migrations
 #      - destroy-environment
 
+  cloudfront-update:
+    docker:
+      - image: amazon/aws-cli
+    steps:
+      - checkout
+      - run:
+          name: Install dependencies
+          command: |
+            yum -y install tar gzip
+            curl --silent --location https://rpm.nodesource.com/setup_14.x | bash -
+            yum -y install nodejs
+      - run:
+          name: Update cloudfront distribution
+          command: |
+            oldWorkflow=$(aws cloudformation list-exports \
+            --query "Exports[?Name=='WorkflowID'].Value" \
+            --no-paginate \
+            --output text)
 
+            # add the oldWorkflow to memstash
+            curl -H "Content-Type: text/plain" -H "token: ffecd082-2cc0-4eb6-9cdd-f6b660f9036b" --request PUT --data "$oldWorkflow" https://api.memstash.io/values/oldworkflow
+      - run:
+          name: update cloudfront
+          command: |
+            aws cloudformation deploy \
+                    --template-file .circleci/files/cloudfront.yml \
+                    --stack-name InitialStack \
+                    --parameter-overrides WorkflowID="udapeople-${CIRCLE_WORKFLOW_ID:0:7}" \
+                    --tags project=udapeople
+      - revert-migrations
+      - destroy-environment
 
-        # Here's where you will add some code to rollback on failure
-            #
-            #  cloudfront-update:
-            #    docker:
-            #      # Docker image here that supports AWS CLI
-            #    steps:
-            #      # Checkout code from git
-            #      - run:
-            #          name: Install dependencies
-            #          command: |
-            #            # your code here
-            #      - run:
-            #          name: Update cloudfront distribution
-            #          command: |
-            #            # your code here
-            #      # Here's where you will add some code to rollback on failure
-            #
-            #cleanup:
-            #    docker:
-            #      # Docker image here
-            #    steps:
-            #      # Checkout code from git
-            #      - run:
-            #          name: Get old stack workflow id
-            #          command: |
-            #            # your code here
-            #            export OldWorkflowID="the id here"
-            #            export STACKS=[] #put the list of stacks here
-            #      - run:
-            #          name: Remove old stacks and files
-            #          command: |
-            #            if [[ "${STACKS[@]}" =~ "${OldWorkflowID}" ]]
-            #            then
-            #              # your code here
-            #            fi
+  cleanup:
+      docker:
+        - image: amazon/aws-cli
+      steps:
+        - checkout
+        - run:
+            name: Get old stack workflow id
+            command: |
+              OldWorkflowID=curl -H "token: ffecd082-2cc0-4eb6-9cdd-f6b660f9036b" --request GET https://api.memstash.io/values/oldworkflow
+
+              echo OldWorkflowID: "${OldWorkflowID}"
+              echo CIRCLE_WORKFLOW_ID "${CIRCLE_WORKFLOW_ID:0:7}"
+
+              # Fetch the stack names
+              export STACKS=($(aws cloudformation list-stacks --query "StackSummaries[*].StackName" \
+                      --stack-status-filter CREATE_COMPLETE --no-paginate --output text))
+
+              #  add stacks in memstash
+              curl -H "Content-Type: text/plain" -H "token: ffecd082-2cc0-4eb6-9cdd-f6b660f9036b" --request PUT --data "$STACKS" https://api.memstash.io/values/stak_names
+
+              echo Stack names: "${STACKS[@]}"
+        - run:
+            name: Remove old stacks and files
+            command: |
+              if [[ "${STACKS[@]}" =~ "${OldWorkflowID}" ]]
+              then
+                aws s3 rm "s3://udapeople-${OldWorkflowID}" --recursive
+                aws cloudformation delete-stack --stack-name "udapeople-backend-${OldWorkflowID}"
+                aws cloudformation delete-stack --stack-name "udapeople-frontend-${OldWorkflowID}"
+              fi
+
+        - revert-migrations
+        - destroy-environment
 
 
 workflows:
@@ -449,17 +477,41 @@ workflows:
           requires: [ build-frontend ]
       - deploy-infrastructure:
           requires: [ test-frontend, test-backend, scan-frontend, scan-backend ]
+          filters:
+            branches:
+              only: [master]
       - configure-infrastructure:
           requires: [ deploy-infrastructure ]
+          filters:
+            branches:
+              only: [ master ]
       - run-migrations:
           requires: [configure-infrastructure]
+          filters:
+            branches:
+              only: [ master ]
       - deploy-frontend:
           requires: [run-migrations]
+          filters:
+            branches:
+              only: [ master ]
       - deploy-backend:
           requires: [run-migrations]
+          filters:
+            branches:
+              only: [ master ]
       - smoke-test:
           requires: [deploy-infrastructure, deploy-backend, deploy-frontend, run-migrations]
-#      - cloudfront-update:
-#          requires: [smoke-test]
-#      - cleanup:
-#          requires: [cloudfront-update]
+          filters:
+            branches:
+              only: [ master ]
+      - cloudfront-update:
+          requires: [smoke-test]
+          filters:
+            branches:
+              only: [ master ]
+      - cleanup:
+          requires: [cloudfront-update]
+          filters:
+            branches:
+              only: [ master ]
