@@ -1,8 +1,7 @@
 version: 2.1
 
 orbs:
-  slack: circleci/slack@4.5.0
-
+  slack: circleci/slack@4.3.0
 
 commands:
   destroy-environment:
@@ -37,6 +36,19 @@ commands:
             --stack-name udapeople-backend-${CIRCLE_WORKFLOW_ID:0:7}
 
 
+  notify_slack_error:
+    steps:
+      - slack/notify:
+          event: fail
+          template: basic_fail_1
+
+  notify_slack_pass:
+    steps:
+      - slack/notify:
+          event: pass
+          template: basic_success_1
+
+
   revert-migrations:
     description: Revert the last migration if successfully run in the current workflow.
     steps:
@@ -60,6 +72,7 @@ jobs:
       - image: circleci/node:13.8.0
     steps:
       - checkout
+      - trigger_slack_notification
       - restore_cache:
           keys: [ frontend-build ]
       - run:
@@ -71,6 +84,8 @@ jobs:
       - save_cache:
           paths: [ frontend/node_modules ]
           key: frontend-build
+      - notify_slack_error
+      - notify_slack_pass
 
   build-backend:
     docker:
@@ -88,6 +103,8 @@ jobs:
       - save_cache:
           paths: [ backend/node_modules ]
           key: backend-build
+      - notify_slack_error
+      - notify_slack_pass
 
   test-frontend:
     docker:
@@ -103,6 +120,8 @@ jobs:
             cd frontend
             npm i
             npm run test
+      - notify_slack_error
+      - notify_slack_pass
 
   test-backend:
     docker:
@@ -201,23 +220,7 @@ jobs:
           root: ~/
           paths:
             - project/.circleci/ansible/inventory.txt
-      - slack/notify:
-          custom: |
-            {
-              "blocks": [
-                {
-                  "type": "section",
-                  "fields": [
-                    {
-                      "type": "plain_text",
-                      "text": "*This is a text notification*",
-                      "emoji": true
-                    }
-                  ]
-                }
-              ]
-            }
-          event: always
+
       - revert-migrations
       - destroy-environment
 
@@ -499,7 +502,6 @@ workflows:
           requires: [ build-frontend ]
       - deploy-infrastructure:
           requires: [ test-frontend, test-backend, scan-frontend, scan-backend ]
-          context: slack-secrets
           filters:
             branches:
               only: [main]
