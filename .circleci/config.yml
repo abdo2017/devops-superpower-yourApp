@@ -434,9 +434,15 @@ jobs:
       steps:
         - checkout
         - run:
+            name: install deps
+            command: |
+              yum -y install tar gzip
+              curl --silent --location https://rpm.nodesource.com/setup_14.x | bash -
+              yum -y install nodejs
+        - run:
             name: Get old stack workflow id
             command: |
-              OldWorkflowID=curl -H "token: ffecd082-2cc0-4eb6-9cdd-f6b660f9036b" --request GET https://api.memstash.io/values/oldworkflow
+              OldWorkflowID=$(curl -H "token: ffecd082-2cc0-4eb6-9cdd-f6b660f9036b" --request GET https://api.memstash.io/values/oldworkflow)
 
               echo OldWorkflowID: "${OldWorkflowID}"
               echo CIRCLE_WORKFLOW_ID "${CIRCLE_WORKFLOW_ID:0:7}"
