@@ -252,7 +252,6 @@ jobs:
           root: ~/
           paths:
             - project/.circleci/ansible/inventory.txt
-            -
       - trigger_slack_notification
       - notify_slack_error
       - notify_slack_pass
