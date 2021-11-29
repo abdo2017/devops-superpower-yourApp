@@ -91,7 +91,6 @@ jobs:
       - image: circleci/node:13.8.0
     steps:
       - checkout
-      - trigger_slack_notification
       - restore_cache:
           keys: [ frontend-build ]
       - run:
@@ -103,6 +102,7 @@ jobs:
       - save_cache:
           paths: [ frontend/node_modules ]
           key: frontend-build
+      - trigger_slack_notification
       - notify_slack_error
       - notify_slack_pass
 
@@ -122,6 +122,7 @@ jobs:
       - save_cache:
           paths: [ backend/node_modules ]
           key: backend-build
+      - trigger_slack_notification
       - notify_slack_error
       - notify_slack_pass
 
@@ -139,6 +140,8 @@ jobs:
             cd frontend
             npm i
             npm run test
+
+      - trigger_slack_notification
       - notify_slack_error
       - notify_slack_pass
 
@@ -155,6 +158,9 @@ jobs:
             cd backend
             npm i
             npm run test
+      - trigger_slack_notification
+      - notify_slack_error
+      - notify_slack_pass
 
   scan-frontend:
     docker:
@@ -171,6 +177,9 @@ jobs:
             npm i
             npm audit fix --audit-level=critical --force
             npm audit --audit-level=critical
+      - trigger_slack_notification
+      - notify_slack_error
+      - notify_slack_pass
 
   scan-backend:
     docker:
@@ -186,6 +195,9 @@ jobs:
             npm i
             npm audit fix --audit-level=critical --force
             npm audit --audit-level=critical
+      - trigger_slack_notification
+      - notify_slack_error
+      - notify_slack_pass
 
   deploy-infrastructure:
     docker:
@@ -198,6 +210,7 @@ jobs:
             yum -y install tar gzip
             curl --silent --location https://rpm.nodesource.com/setup_14.x | bash -
             yum -y install nodejs
+
 
       - run:
           name: Ensure back-end infrastructure exists
@@ -239,6 +252,10 @@ jobs:
           root: ~/
           paths:
             - project/.circleci/ansible/inventory.txt
+            -
+      - trigger_slack_notification
+      - notify_slack_error
+      - notify_slack_pass
 
       - revert-migrations
       - destroy-environment
@@ -269,6 +286,10 @@ jobs:
             cd .circleci/ansible
             cat inventory.txt
             ansible-playbook -i inventory.txt configure-server.yml
+      - trigger_slack_notification
+      - notify_slack_error
+      - notify_slack_pass
+
       - revert-migrations
       - destroy-environment
 
@@ -308,6 +329,9 @@ jobs:
              --data "0" https://api.memstash.io/values/migration_status_${CIRCLE_WORKFLOW_ID}
 
              fi
+      - trigger_slack_notification
+      - notify_slack_error
+      - notify_slack_pass
       - revert-migrations
       - destroy-environment
 
@@ -342,6 +366,10 @@ jobs:
               npm run build
               tar -czvf artifact-"${CIRCLE_WORKFLOW_ID:0:7}".tar.gz dist
               aws s3 cp dist s3://udapeople-"${CIRCLE_WORKFLOW_ID:0:7}" --recursive
+
+      - trigger_slack_notification
+      - notify_slack_error
+      - notify_slack_pass
 
       - revert-migrations
       - destroy-environment
@@ -378,6 +406,9 @@ jobs:
             echo "Contents  of the inventory.txt file is -------"
             cat inventory.txt
             ansible-playbook -i inventory.txt deploy-backend.yml
+      - trigger_slack_notification
+      - notify_slack_error
+      - notify_slack_pass
 
       - revert-migrations
       - destroy-environment
@@ -430,6 +461,10 @@ jobs:
               echo "Frontend Smoke Test Failed"
                exit 1
              fi
+      - trigger_slack_notification
+      - notify_slack_error
+      - notify_slack_pass
+
       - revert-migrations
       - destroy-environment
 
@@ -462,8 +497,12 @@ jobs:
                     --stack-name InitialStack \
                     --parameter-overrides WorkflowID="${CIRCLE_WORKFLOW_ID:0:7}" \
                     --tags project=udapeople
+      - trigger_slack_notification
+      - notify_slack_error
+      - notify_slack_pass
+
       - revert-migrations
-#      - destroy-environment
+      - destroy-environment
 
 #  cleanup:
 #      docker:
@@ -560,3 +599,4 @@ workflows:
 #          filters:
 #            branches:
 #              only: [ main ]
+
